@@ -7,22 +7,18 @@ import java.util.Map;
 // CLASS REPRESENTING STOCK LIST
 public class StockList {
 
-    // == fields ==
     private final Map<String, StockItem> list;
+    private final String message = "\t>StockList: ";
 
-    // == constructors ==
     public StockList() {
         this.list = new LinkedHashMap<>();
+        initialStock();
     }
 
-    // == stock list methods ==
-
-    public int addStock(StockItem item){
-        if (item != null){
-
+    private int addInitialStock(StockItem item) {
+        if (item != null) {
             StockItem inStock = list.getOrDefault(item.getName(), item);
-
-            if (inStock != item){
+            if (inStock != item) {
                 item.adjustStock(inStock.quantityInStock());
             }
             list.put(item.getName(), item);
@@ -31,82 +27,105 @@ public class StockList {
         return 0;
     }
 
-    public int addToReserved(String item, int quantity){
+    public void addToBasket(Basket basket, String item, int quantity) {
 
-        StockItem toReserve = list.getOrDefault(item, null);
-        int inStockMinusReserved = toReserve.quantityInStock() - toReserve.getReserved();
+        StockItem itemToReserve = list.getOrDefault(item, null);
 
-        if ( (toReserve != null) && inStockMinusReserved >= quantity){
-            toReserve.reserve(quantity);
-            inStockMinusReserved -= quantity;
-            System.out.println("StockList called. Reserved " +
-                    quantity + " '" + toReserve.getName() + " | "+ inStockMinusReserved + " items left" );
-            return quantity;
-        }
-        System.out.println("StockList called. Not reserved. Not enough '" + toReserve.getName() + "' items");
-        return 0;
-    }
+        if ((itemToReserve == null)) {
+            System.out.println(message + "We do not sell '" + item + "'");
+        } else if (quantity <= 0) {
+            System.out.println(message + "Failed, inappropriate quantity");
+        } else {
 
-    public int removeFromReserved(String item, int quantity){
+            int inStockMinusReserved = itemToReserve.quantityInStock() - itemToReserve.getReserved();
 
-        StockItem toUnReserve = list.getOrDefault(item, null);
+            if (inStockMinusReserved < quantity) {
+                System.out.println(message + "Not reserved. Not enough '" + itemToReserve.getName() + "' items available");
+            } else {
+                basket.addToBasket(itemToReserve, quantity);
+                itemToReserve.reserve(quantity);
+                inStockMinusReserved -= quantity;
 
-
-        if ( (toUnReserve != null) && toUnReserve.getReserved() >= quantity){
-            toUnReserve.unReserve(quantity);
-            System.out.println("StockList called. Unreserved " + quantity + " '" + toUnReserve.getName() + "' items.");
-            return quantity;
-        }
-        System.out.println("StockList called. Not enough '" + toUnReserve.getName() + "' items to remove");
-        return 0;
-    }
-
-    public void sellToCheckOut(Basket cartToCheckOut){
-
-        for (Map.Entry<StockItem, Integer> toSell : cartToCheckOut.items().entrySet()){
-            sellStock(toSell.getKey().getName(), toSell.getValue());
+                System.out.println(message + basket.getName() + ": " + message + " Reserved " +
+                        quantity + " '" + itemToReserve.getName() + "' | " + inStockMinusReserved + " items left");
+            }
         }
     }
 
-    public int sellStock(String item, int quantity){
-        StockItem inStock = list.getOrDefault(item, null);
+    public boolean removeFromBasket(Basket basket, String item, int quantity) {
 
-        if ( (inStock !=null) && (inStock.quantityInStock() >= quantity) && (quantity > 0) ){
-            inStock.adjustStock(-quantity);
-            return quantity;
+        if (!basket.itemsByNameInBasket().contains(item) || quantity < 1) {
+            System.out.println(message + " Failed: no such item or inappropriate quantity");
+            return false;
         }
-        return 0;
+
+        StockItem itemToUnReserve = list.get(item);
+
+        if (basket.itemsInBasket().get(itemToUnReserve) < quantity) {
+            System.out.println(message + " Failed: not enough '" + item + "' items in basket");
+            return false;
+        }
+
+        itemToUnReserve.unReserve(quantity);
+        System.out.println(message + " Unreserved " + quantity + " '" + itemToUnReserve.getName() + "' items.");
+        basket.removeFromBasket(itemToUnReserve, quantity);
+        return true;
     }
 
-    public StockItem get(String key){
-        return list.get(key);
+    public void sellToCheckOut(Basket basketToCheckOut) {
+
+        for (Map.Entry<StockItem, Integer> toSell : basketToCheckOut.itemsInBasket().entrySet()) {
+            StockItem inStock = list.get(toSell.getKey().getName());
+            inStock.adjustStock(-toSell.getValue());
+        }
+        System.out.print(message + "'" + basketToCheckOut.getName() + "' checkout: ");
+        basketToCheckOut.checkOut();
     }
 
-    public Map<String, Double> priceList(){
+    public Map<String, Double> priceList() {
         Map<String, Double> prices = new LinkedHashMap<>();
-        for (Map.Entry<String, StockItem> item : list.entrySet() ){
+        for (Map.Entry<String, StockItem> item : list.entrySet()) {
             prices.put(item.getKey(), item.getValue().getPrice());
         }
         return Collections.unmodifiableMap(prices);
     }
 
-    public Map<String, StockItem> Items(){
-        return Collections.unmodifiableMap(list);
-    }
-
-    @Override
-    public String toString() {
+    public String printStockList() {
         String s = "\nStock List\n";
-        double totalCost =0;
-        for (Map.Entry<String, StockItem> item : list.entrySet()){
+        double totalCost = 0;
+        for (Map.Entry<String, StockItem> item : list.entrySet()) {
 
             StockItem stockItem = item.getValue();
             double itemValue = stockItem.getPrice() * stockItem.quantityInStock();
 
-            s = s + "\t" + stockItem + ". There are " + stockItem.quantityInStock() + " in stock. Value of the items: ";
+            s = s + "\t" + stockItem + ":\t there are " + stockItem.quantityInStock() + " in stock." +
+                    " Value of the items: ";
             s = s + String.format("%.2f", itemValue) + "\n";
             totalCost += itemValue;
         }
-        return s +"Total Stock Value " + String.format("%.2f", totalCost);
+        return s + "Total Stock Value " + String.format("%.2f", totalCost) + "$";
+    }
+
+    private void initialStock() {
+        StockItem temp = new StockItem("bread", 0.86, 10);
+        addInitialStock(temp);
+        temp = new StockItem("cake", 1.1, 2);
+        addInitialStock(temp);
+        temp = new StockItem("milk", 1.29, 40);
+        addInitialStock(temp);
+        temp = new StockItem("tomato", 0.23, 200);
+        addInitialStock(temp);
+        temp = new StockItem("cheese", 4.15, 60);
+        addInitialStock(temp);
+        temp = new StockItem("cheese", 2.05, 10);
+        addInitialStock(temp);
+        temp = new StockItem("juice", 3.0, 120);
+        addInitialStock(temp);
+        temp = new StockItem("cherry", 0.1, 500);
+        addInitialStock(temp);
+        temp = new StockItem("salad", 1.9, 60);
+        addInitialStock(temp);
+        temp = new StockItem("bread", 5.14, 10);
+        addInitialStock(temp);
     }
 }

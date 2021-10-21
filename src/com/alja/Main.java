@@ -1,123 +1,87 @@
 package com.alja;
 
-
 public class Main {
 
     private static StockList stockList = new StockList();
 
     public static void main(String[] args) {
 
-        // ADD ITEMS TO STOCK ////////////////////////////////////////////////////
-        StockItem temp = new StockItem("bread", 0.86, 10);
-        stockList.addStock(temp);
+        // SIMULATION OF BASKETS FUNCTIONALITY:
 
-        temp = new StockItem("cake", 1.1, 2);
-        stockList.addStock(temp);
-        temp = new StockItem("milk", 1.29, 40);
-        stockList.addStock(temp);
-        temp = new StockItem("tomato", 0.23, 200);
-        stockList.addStock(temp);
-        temp = new StockItem("cheese", 4.15, 60);
-        stockList.addStock(temp);
-        temp = new StockItem("cheese", 2.05, 10);
-        stockList.addStock(temp);
-        temp = new StockItem("juice", 3.0, 120);
-        stockList.addStock(temp);
-        temp = new StockItem("cherry", 0.1, 500);
-        stockList.addStock(temp);
-        temp = new StockItem("salad", 1.9, 60);
-        stockList.addStock(temp);
-        temp = new StockItem("ketchup", 5.14, 10);
-        stockList.addStock(temp);
+        // printing initial stock values
+        System.out.println("Stock price list: \n" + stockList.priceList());
+        System.out.println(stockList.printStockList());
 
-        System.out.println(stockList);
-
-        
-        // SIMULATION OF BASKETS /////////////////////////////////////////////////
-
-            // BASKET #1
-        System.out.println("*********************************cart #1");
-        Basket myCart1 = new Basket("Cart 1");
+        // BASKET #1
+        System.out.println("***************************************basket #1");
+        Basket basket1 = new Basket("Basket 1");
 
         System.out.println("");
-        addToCart(myCart1, "ketchup", 10);
-        addToCart(myCart1, "milk", 2);
-        addToCart(myCart1, "cheese", 5);
-        System.out.println(myCart1);
+        // showing empty basket and adding items to the basket:
+        System.out.println("*");
+        System.out.println(basket1.showBasket());
+        stockList.addToBasket(basket1, "bread", 10);
+        stockList.addToBasket(basket1, "milk", 2);
+        stockList.addToBasket(basket1, "cheese", 5);
 
-        System.out.println("#");
-        removeFromCart(myCart1, "ketchup", 10);
-        removeFromCart(myCart1, "milk", 1);
-        System.out.println(myCart1);
+        // showing added items:
+        System.out.println(basket1.showBasket());
 
-        System.out.println("# #");
-        addToCart(myCart1, "ketchup", 9);
-        checkOut(myCart1);
-        System.out.println(myCart1);
+        // removing items from basket:
+        System.out.println("* *");
+        stockList.removeFromBasket(basket1, "bread", 10);
+        stockList.removeFromBasket(basket1, "milk", 1);
 
-        System.out.println(stockList);
+        // removing items with wrong values
+        System.out.println("* * *");
+        stockList.removeFromBasket(basket1, "cheese", 10);
+        stockList.removeFromBasket(basket1, "cheese", -1);
+        stockList.removeFromBasket(basket1, "phone", 1);
 
-            // BASKET #2
-        System.out.println("*********************************cart #2");
-        Basket myCart2 = new Basket("Cart 2");
+        System.out.println(basket1.showBasket());
+
+        // checking out the basket:
+        System.out.println("* * * *");
+        stockList.sellToCheckOut(basket1);
+
+        // showing basket and stock values:
+        System.out.println("* * * * *");
+        System.out.println(basket1.showBasket());
+        System.out.println(stockList.printStockList());
+
+        // BASKET #2
+        System.out.println("***************************************basket #2");
+        Basket basket2 = new Basket("Basket 2");
 
         System.out.println("");
+        // adding items to the basket(of max quantities) without checking out :
+        System.out.println("*");
+        stockList.addToBasket(basket2, "tomato", 200);
+        stockList.addToBasket(basket2, "salad", 60);
+        System.out.println(basket2.showBasket());
 
-        addToCart(myCart2, "ketchup", 1);
-        addToCart(myCart2, "milk", 40);
-        addToCart(myCart2, "cheese", 5);
-        System.out.println(myCart2);
-
-            // BASKET #3
-        System.out.println("*********************************cart #3");
-        Basket myCart3 = new Basket("Cart 3");
+        // BASKET #3
+        System.out.println("***************************************basket #3");
+        Basket basket3 = new Basket("Basket 3");
 
         System.out.println("");
+        // adding items that are already reserved by "Basket 2" :
+        System.out.println("*");
+        stockList.addToBasket(basket3, "tomato", 5);
 
-        addToCart(myCart3, "ketchup", 1);
-        removeFromCart(myCart3,"milk", 2);
-        addToCart(myCart3, "salad", 40);
-        System.out.println(myCart3);
+        // adding item that not exists:
+        System.out.println("* *");
+        stockList.addToBasket(basket3, "banana", 2);
 
-        checkOut(myCart3);
-        System.out.println(myCart3);
+        // adding items and checking out basket 2 and basket 3:
+        System.out.println("* * *");
+        stockList.addToBasket(basket3, "juice", 40);
+        System.out.println(basket3.showBasket());
+        stockList.sellToCheckOut(basket3);
+        System.out.println(basket3.showBasket());
 
-        System.out.println(stockList);
+        stockList.sellToCheckOut(basket2);
 
-    }
-
-    // BASKET FUNCTIONALITY ////////////////////////////////////////////////////
-
-    public static int addToCart(Basket basket, String item, int quantity){
-
-        StockItem stockItem = stockList.get(item);
-        if (stockItem == null){
-            System.out.println("We do not sell " + item);
-            return 0;
-        }
-        if (stockList.addToReserved(item, quantity) != 0){
-            basket.addToCart(stockItem, quantity);
-            return quantity;
-        }
-        return 0;
-    }
-
-    public static int removeFromCart(Basket basket, String item, int quantity){
-
-        StockItem stockItem = stockList.get(item);
-        if (stockItem == null){
-            System.out.println("We do not sell " + item);
-            return 0;
-        }
-        if (stockList.removeFromReserved(item, quantity) != 0){
-            basket.removeFromCart(stockItem, quantity);
-            return quantity;
-        }
-        return 0;
-    }
-
-    public static void checkOut(Basket cart) {
-        stockList.sellToCheckOut(cart);
-        cart.checkOut();
+        System.out.println(stockList.printStockList());
     }
 }
